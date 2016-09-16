@@ -11,6 +11,14 @@ void loop() {
   char* line;
   char** args;
   int status;
+  do {
+    printf("mash > ");
+    line = read();
+    args = split(line);
+    status = execute(args);
+    free(line);
+    free(args);
+  } while(status);
 }
 
 /**
