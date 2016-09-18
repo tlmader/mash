@@ -58,17 +58,19 @@ char** redirect(char** argv) {
   int in = 0;
   int out = 0;
   int new_arg = 1;
-  char* in_path = NULL;
-  char* out_path = NULL;
   int bufsize = 64;
   char** new_argv = malloc(bufsize * sizeof(char*));
   while (argv[i] != NULL) {
     if (strcmp(argv[i], "<") == 0) {
-      in_path = argv[i + 1];
+      in = open(argv[i + 1], O_RDONLY);
+      dup2(in, 0);
+      close(in);
       new_arg = 0;
       new_argv[i] = NULL;
     } else if (strcmp(argv[i], ">") == 0) {
-      out_path = argv[i + 1];
+      out = open(argv[i + 1], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+      dup2(out, 1);
+      close(out);
       new_arg = 0;
       new_argv[i] = NULL;
     }
@@ -76,20 +78,6 @@ char** redirect(char** argv) {
       new_argv[i] = argv[i];
     }
     i++;
-  }
-  if (in_path != NULL) {
-    in = open(in_path, O_RDONLY);
-    dup2(in, 0);
-  }
-  if (out_path != NULL) {
-    out = open(out_path, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-    dup2(out, 1);
-  }
-  if (in) {
-    close(in);
-  }
-  if (out) {
-    close(out);
   }
   return new_argv;
 }
