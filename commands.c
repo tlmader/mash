@@ -33,5 +33,5 @@ int command_cd(char** argv) {
 }
 
 int command_exit(char** argv) {
-  return 1;
+  return 0;
 }

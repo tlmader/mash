@@ -7,6 +7,7 @@
 
 #include "commands.h"
 #include <ctype.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,39 @@ char** split(char* line) {
   return tokens;
 }
 
+void redirect(char** argv) {
+  int i = 0;
+  int in = 0;
+  int out = 0;
+  char* in_argv = NULL;
+  char* out_argv = NULL;
+  while (argv[i] != NULL) {
+    if (strcmp(argv[i], "<") == 0) {
+      in = 1;
+      out = 0;
+    } else if (strcmp(argv[i], "<") == 0) {
+      in = 0;
+      out = 1;
+    }
+    if (in) {
+      strcat(in_argv, " ");
+      strcat(in_argv, argv[i]);
+    } else if (out) {
+      strcat(out_argv, " ");
+      strcat(out_argv, argv[i]);
+    }
+    i++;
+  }
+  if (in_argv != NULL) {
+    in = (open(in_argv, O_RDONLY), 0);
+  }
+  if (out_argv != NULL) {
+    out = (open(out_argv, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR), 1);
+  }
+  close(in);
+  close(out);
+}
+
 /**
 * Forks and executes a process.
 *
@@ -57,6 +91,7 @@ int run(char** argv) {
   int status;
   pid = fork();
   if (pid == 0) {
+    redirect(argv);
     execvp(*argv, argv);
     printf("mash: command not found: %s\n", *argv);
     exit(1);
@@ -91,8 +126,10 @@ int execute(char** argv) {
 
 /**
  * Handles commands during the shell loop
+ *
+ * @return the status
  */
-void loop() {
+int loop() {
   char* line;
   char** argv;
   int status;
@@ -113,6 +150,7 @@ void loop() {
     free(line);
     free(argv);
   } while (status);
+  return status;
 }
 
 /**
@@ -122,7 +160,5 @@ void loop() {
  * @param argv the vector of arguments
  */
 int main(int argc, char** argv) {
-  loop();
-
-  return 0;
+  return loop();
 }
