@@ -11,14 +11,7 @@
 int command_cd(char** argv);
 int command_exit(char** argv);
 
-char* command_labels[] = {
-  "cd",
-  "exit"
-};
-
-int (*command_functions[]) (char**) = {
-  &command_cd,
-  &command_exit
-};
+extern char* command_labels[];
+extern int (*command_functions[]) (char**);
 
 #endif

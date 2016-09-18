@@ -5,12 +5,12 @@
  * @date 2016-09-14
  */
 
+#include "commands.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "commands.h"
 
 #define DELIMS " \t\r\n\a"
 
@@ -23,6 +23,10 @@ char* get_input() {
   char* line = NULL;
   unsigned long bufsize = 0;
   getline(&line, &bufsize, stdin);
+  size_t len = strlen(line);
+  if (line[len - 1] == '\n') {
+    line[len - 1] = '\0';
+  }
   return line;
 }
 
@@ -56,12 +60,11 @@ int run(char** argv) {
   int status;
   pid = fork();
   if (pid == 0) {
-    if (execvp(*argv, argv) < 0) {
-      printf("mash: execute failed\n");
-      exit(1);
-    }
+    execvp(*argv, argv);
+    perror("mash: Error executing");
+    exit(1);
   } else if (pid < 0) {
-    printf("mash: fork failed\n");
+    perror("mash: Error forking");
     exit(1);
   } else {
     while (wait(&status) != pid);
@@ -81,6 +84,7 @@ int execute(char** argv) {
     if (strcmp(argv[0], command_labels[i]) == 0) {
       return (*command_functions[i])(argv);
     }
+    i++;
   }
   return run(argv);
 }

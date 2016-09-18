@@ -5,16 +5,19 @@
 # Date: 2016-09-14
 #
 
-CC = gcc
+CC = clang
 TARGETS = mash.exe
 
 all: $(TARGETS)
 
-mash.exe: main.o
-	$(CC) -o mash.exe main.o
+mash.exe: commands.o main.o
+	$(CC) -o mash.exe commands.o main.o
+
+commands.o: commands.c
+	$(CC) -c commands.c
 
 main.o: main.c
 	$(CC) -c main.c
 
 clean:
-	rm -rf *.o main.c
+	rm -rf *.o mash.exe

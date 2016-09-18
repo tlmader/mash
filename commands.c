@@ -6,11 +6,32 @@
  */
 
 #include "commands.h"
+#include <stdio.h>
+#include <unistd.h>
+
+char* command_labels[] = {
+  "cd",
+  "exit",
+  NULL
+};
+
+int (*command_functions[]) (char**) = {
+  &command_cd,
+  &command_exit,
+  NULL
+};
 
 int command_cd(char** argv) {
   return 0;
 }
 
 int command_exit(char** argv) {
-  return 0;
+  if (argv[1] == NULL) {
+    chdir("~");
+  } else {
+    if (chdir(argv[1]) != 0) {
+      perror("mash: ");
+    }
+  }
+  return 1;
 }
