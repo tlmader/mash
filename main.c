@@ -6,9 +6,11 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "commands.h"
 
 #define DELIMS " \t\r\n\a"
 
@@ -19,7 +21,7 @@
  */
 char* get_input() {
   char* line = NULL;
-  ssize_t bufsize = 0;
+  unsigned long bufsize = 0;
   getline(&line, &bufsize, stdin);
   return line;
 }
@@ -31,9 +33,10 @@ char* get_input() {
 * @return the tokens
 */
 char** split(char* line) {
-  char** tokens;
+  int bufsize = 64;
+  char** tokens = malloc(bufsize * sizeof(char*));
   char* token = strtok(line, DELIMS);
-  int i;
+  int i = 0;
   while (token != NULL) {
     tokens[i] = token;
     i++;
@@ -42,7 +45,13 @@ char** split(char* line) {
   return tokens;
 }
 
-int execute(char** argv) {
+/**
+* Forks and executes a process.
+*
+* @param argv the vector of arguments
+* @return the status
+*/
+int run(char** argv) {
   pid_t pid;
   int status;
   pid = fork();
@@ -57,6 +66,23 @@ int execute(char** argv) {
   } else {
     while (wait(&status) != pid);
   }
+  return 1;
+}
+
+/**
+* Executes a command if recognized, otherwise enters run().
+*
+* @param argv the vector of arguments
+* @return the status returned by run()
+*/
+int execute(char** argv) {
+  int i = 0;
+  while (command_labels[i] != NULL) {
+    if (strcmp(argv[0], command_labels[i]) == 0) {
+      return (*command_functions[i])(argv);
+    }
+  }
+  return run(argv);
 }
 
 /**
@@ -64,24 +90,24 @@ int execute(char** argv) {
  */
 void loop() {
   char* line;
-  char** args;
+  char** argv;
   int status;
   do {
     printf("mash > ");
     line = get_input();
-    args = split(line);
-    status = execute(args);
+    argv = split(line);
+    status = execute(argv);
     free(line);
-    free(args);
-  }
+    free(argv);
+  } while (status);
 }
 
 /**
-* Called at program startup.
-*
-* @param argc the number of arguments
-* @param argv the array of arguments
-*/
+ * Called at program startup.
+ *
+ * @param argc the number of arguments
+ * @param argv the vector of arguments
+ */
 int main(int argc, char** argv) {
   loop();
 

@@ -6,12 +6,12 @@
 #
 
 CC = gcc
-TARGETS = main.exe
+TARGETS = mash.exe
 
 all: $(TARGETS)
 
-main.exe: main.o
-	$(CC) -o main.exe main.o
+mash.exe: main.o
+	$(CC) -o mash.exe main.o
 
 main.o: main.c
 	$(CC) -c main.c
