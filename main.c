@@ -32,7 +32,7 @@ char* get_input() {
  * @param line a string to be split
  * @return the tokens
  */
-char** split(char* line) {
+char** split_into_tokens(char* line) {
   int bufsize = 64;
   char** tokens = malloc(bufsize * sizeof(char*));
   char* delims = " \t\r\n\a";
@@ -45,6 +45,32 @@ char** split(char* line) {
   }
   tokens[i] = NULL;
   return tokens;
+}
+
+/**
+ * Modifies a token array by breaking into commands by the '|' symbol.
+ *
+ * @param line a string to be split
+ * @return the tokens
+ */
+char*** split_into_commands(char** tokens) {
+  int bufsize = 64;
+  char*** commands = malloc(bufsize * sizeof(char**));
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  while (tokens[i] != NULL) {
+    if (strcmp(tokens[i], "|") == 0) {
+      k++;
+      j = 0;
+    } else {
+      commands[k][j] = tokens[i];
+      j++;
+    }
+    i++;
+  }
+  tokens[i] = NULL;
+  return commands;
 }
 
 /**
@@ -134,6 +160,7 @@ int execute(char** argv) {
 int loop() {
   char* line;
   char** argv;
+  char*** commands;
   int status;
   do {
     char cwd[1024];
@@ -147,10 +174,16 @@ int loop() {
     }
     printf("-> %s ", dir);
     line = get_input();
-    argv = split(line);
-    status = execute(argv);
+    argv = split_into_tokens(line);
+    commands = split_into_commands(argv);
+    int i = 0;
+    while (commands[i] != NULL && status) {
+      status = execute(commands[i]);
+      i++;
+    }
     free(line);
     free(argv);
+    free(commands);
   } while (status);
   return status;
 }
