@@ -32,10 +32,9 @@ char* get_input() {
  * @param line a string to be split
  * @return the tokens
  */
-char** split_into_tokens(char* line) {
+char** split(char* line, char* delims) {
   int bufsize = 64;
   char** tokens = malloc(bufsize * sizeof(char*));
-  char* delims = " \t\r\n\a";
   char* token = strtok(line, delims);
   int i = 0;
   while (token != NULL) {
@@ -45,32 +44,6 @@ char** split_into_tokens(char* line) {
   }
   tokens[i] = NULL;
   return tokens;
-}
-
-/**
- * Modifies a token array by breaking into commands by the '|' symbol.
- *
- * @param line a string to be split
- * @return the tokens
- */
-char*** split_into_commands(char** tokens) {
-  int bufsize = 64;
-  char*** commands = malloc(bufsize * sizeof(char**));
-  int i = 0;
-  int j = 0;
-  int k = 0;
-  while (tokens[i] != NULL) {
-    if (strcmp(tokens[i], "|") == 0) {
-      k++;
-      j = 0;
-    } else {
-      commands[k][j] = tokens[i];
-      j++;
-    }
-    i++;
-  }
-  tokens[i] = NULL;
-  return commands;
 }
 
 /**
@@ -85,7 +58,7 @@ char** redirect(char** argv) {
   int out = 0;
   int new_arg = 1;
   int bufsize = 64;
-  char** new_argv = malloc(bufsize * sizeof(char*));
+  char** new_argv = malloc(bufsize * sizeof(char**));
   while (argv[i] != NULL) {
     if (strcmp(argv[i], "<") == 0) {
       in = open(argv[i + 1], O_RDONLY);
@@ -159,9 +132,8 @@ int execute(char** argv) {
  */
 int loop() {
   char* line;
-  char** argv;
-  char*** commands;
-  int status;
+  char** tokens;
+  int status = 1;
   do {
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
@@ -174,16 +146,14 @@ int loop() {
     }
     printf("-> %s ", dir);
     line = get_input();
-    argv = split_into_tokens(line);
-    commands = split_into_commands(argv);
+    tokens = split(line, "|");
     int i = 0;
-    while (commands[i] != NULL && status) {
-      status = execute(commands[i]);
+    while (tokens[i] != NULL && status) {
+      status = execute(split(line, " \t\r\n\a"));
       i++;
     }
     free(line);
-    free(argv);
-    free(commands);
+    free(tokens);
   } while (status);
   return status;
 }
