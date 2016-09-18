@@ -22,16 +22,16 @@ int (*command_functions[]) (char**) = {
 };
 
 int command_cd(char** argv) {
-  return 0;
-}
-
-int command_exit(char** argv) {
   if (argv[1] == NULL) {
     chdir("~");
   } else {
     if (chdir(argv[1]) != 0) {
-      perror("mash: ");
+      printf("cd: no such file or directory: %s\n", argv[1]);
     }
   }
+  return 1;
+}
+
+int command_exit(char** argv) {
   return 1;
 }

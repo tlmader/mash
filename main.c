@@ -13,8 +13,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DELIMS " \t\r\n\a"
-
 /**
  * Reads and returns an entire line from stream.
  *
@@ -24,10 +22,6 @@ char* get_input() {
   char* line = NULL;
   unsigned long bufsize = 0;
   getline(&line, &bufsize, stdin);
-  size_t len = strlen(line);
-  if (line[len - 1] == '\n') {
-    line[len - 1] = '\0';
-  }
   return line;
 }
 
@@ -40,13 +34,15 @@ char* get_input() {
 char** split(char* line) {
   int bufsize = 64;
   char** tokens = malloc(bufsize * sizeof(char*));
-  char* token = strtok(line, DELIMS);
+  char* delims = " \t\r\n\a";
+  char* token = strtok(line, delims);
   int i = 0;
   while (token != NULL) {
     tokens[i] = token;
     i++;
-    token = strtok(NULL, DELIMS);
+    token = strtok(NULL, delims);
   }
+  tokens[i] = NULL;
   return tokens;
 }
 
