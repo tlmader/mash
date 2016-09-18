@@ -20,4 +20,4 @@ main.o: main.c
 	$(CC) -c main.c
 
 clean:
-	rm -rf *.o mash.exe
+	rm -rf *.o *.txt mash.exe

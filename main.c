@@ -47,37 +47,44 @@ char** split(char* line) {
   return tokens;
 }
 
-void redirect(char** argv) {
+char** redirect(char** argv) {
   printf("=== redirect BEGIN ===\n");
   int i = 0;
-  int in = 1;
-  int out = 1;
+  int in = 0;
+  int out = 0;
+  int new_arg = 1;
   char* in_path = NULL;
   char* out_path = NULL;
+  int bufsize = 64;
+  char** new_argv = malloc(bufsize * sizeof(char*));
   while (argv[i] != NULL) {
-    printf("argv[i]: %s\n", argv[i]);
     if (strcmp(argv[i], "<") == 0) {
       in_path = argv[i + 1];
-      printf("in_path: %s\n", in_path);
+      new_arg = 0;
     } else if (strcmp(argv[i], ">") == 0) {
       out_path = argv[i + 1];
-      printf("out_path: %s\n", out_path);
+      new_arg = 0;
+    }
+    if (new_arg) {
+      new_argv[i] = argv[i];
     }
     i++;
   }
   if (in_path != NULL) {
-    printf("open(%s)\n", in_path);
     in = open(in_path, O_RDONLY);
     dup2(in, 0);
   }
   if (out_path != NULL) {
-    printf("open(%s)\n", out_path);
     out = open(out_path, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
     dup2(out, 1);
   }
-  close(in);
-  close(out);
-  printf("=== redirect END ===\n");
+  if (in) {
+    close(in);
+  }
+  if (out) {
+    close(out);
+  }
+  return new_argv;
 }
 
 /**
@@ -91,7 +98,7 @@ int run(char** argv) {
   int status;
   pid = fork();
   if (pid == 0) {
-    redirect(argv);
+    argv = redirect(argv);
     execvp(*argv, argv);
     printf("mash: command not found: %s\n", *argv);
     exit(1);
