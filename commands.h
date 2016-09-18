@@ -1,5 +1,5 @@
 /**
- * Defines command labels and their corresponding functions.
+ * Defines arrays and functions for commands.
  *
  * @author Ted Mader
  * @date 2016-09-17

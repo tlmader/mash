@@ -1,5 +1,5 @@
 /**
- * Implements command functions.
+ * Implements command labels and their corresponding functions.
  *
  * @author Ted Mader
  * @date 2016-09-18

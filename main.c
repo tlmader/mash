@@ -1,11 +1,12 @@
 /**
- * Contains the main and looping functions.
+ * Contains the main and program logic for the mash shell.
  *
  * @author Ted Mader
  * @date 2016-09-14
  */
 
 #include "commands.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,10 +62,10 @@ int run(char** argv) {
   pid = fork();
   if (pid == 0) {
     execvp(*argv, argv);
-    perror("mash: Error executing");
+    printf("mash: command not found: %s\n", *argv);
     exit(1);
   } else if (pid < 0) {
-    perror("mash: Error forking");
+    perror("mash");
     exit(1);
   } else {
     while (wait(&status) != pid);
@@ -79,6 +80,9 @@ int run(char** argv) {
 * @return the status returned by run()
 */
 int execute(char** argv) {
+  if (*argv == NULL) {
+    return 1;
+  }
   int i = 0;
   while (command_labels[i] != NULL) {
     if (strcmp(argv[0], command_labels[i]) == 0) {
