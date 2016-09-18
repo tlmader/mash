@@ -27,11 +27,11 @@ char* get_input() {
 }
 
 /**
-* Modifies a string by breaking into tokens.
-*
-* @param line a string to be split
-* @return the tokens
-*/
+ * Modifies a string by breaking into tokens.
+ *
+ * @param line a string to be split
+ * @return the tokens
+ */
 char** split(char* line) {
   int bufsize = 64;
   char** tokens = malloc(bufsize * sizeof(char*));
@@ -47,8 +47,13 @@ char** split(char* line) {
   return tokens;
 }
 
+/**
+ * Handles stream redirection and returns the args for the command.
+ *
+ * @param argv the vector of args
+ * @param the vector of args for the command
+ */
 char** redirect(char** argv) {
-  printf("=== redirect BEGIN ===\n");
   int i = 0;
   int in = 0;
   int out = 0;
@@ -61,9 +66,11 @@ char** redirect(char** argv) {
     if (strcmp(argv[i], "<") == 0) {
       in_path = argv[i + 1];
       new_arg = 0;
+      new_argv[i] = NULL;
     } else if (strcmp(argv[i], ">") == 0) {
       out_path = argv[i + 1];
       new_arg = 0;
+      new_argv[i] = NULL;
     }
     if (new_arg) {
       new_argv[i] = argv[i];
@@ -90,7 +97,7 @@ char** redirect(char** argv) {
 /**
 * Forks and executes a process.
 *
-* @param argv the vector of arguments
+* @param argv the vector of args
 * @return the status
 */
 int run(char** argv) {
@@ -114,7 +121,7 @@ int run(char** argv) {
 /**
 * Executes a command if recognized, otherwise enters run().
 *
-* @param argv the vector of arguments
+* @param argv the vector of args
 * @return the status returned by run()
 */
 int execute(char** argv) {
@@ -163,8 +170,8 @@ int loop() {
 /**
  * Called at program startup.
  *
- * @param argc the number of arguments
- * @param argv the vector of arguments
+ * @param argc the number of args
+ * @param argv the vector of args
  */
 int main(int argc, char** argv) {
   return loop();
