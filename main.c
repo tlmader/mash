@@ -48,36 +48,36 @@ char** split(char* line) {
 }
 
 void redirect(char** argv) {
+  printf("=== redirect BEGIN ===\n");
   int i = 0;
-  int in = 0;
-  int out = 0;
-  char* in_argv = NULL;
-  char* out_argv = NULL;
+  int in = 1;
+  int out = 1;
+  char* in_path = NULL;
+  char* out_path = NULL;
   while (argv[i] != NULL) {
+    printf("argv[i]: %s\n", argv[i]);
     if (strcmp(argv[i], "<") == 0) {
-      in = 1;
-      out = 0;
-    } else if (strcmp(argv[i], "<") == 0) {
-      in = 0;
-      out = 1;
-    }
-    if (in) {
-      strcat(in_argv, " ");
-      strcat(in_argv, argv[i]);
-    } else if (out) {
-      strcat(out_argv, " ");
-      strcat(out_argv, argv[i]);
+      in_path = argv[i + 1];
+      printf("in_path: %s\n", in_path);
+    } else if (strcmp(argv[i], ">") == 0) {
+      out_path = argv[i + 1];
+      printf("out_path: %s\n", out_path);
     }
     i++;
   }
-  if (in_argv != NULL) {
-    in = (open(in_argv, O_RDONLY), 0);
+  if (in_path != NULL) {
+    printf("open(%s)\n", in_path);
+    in = open(in_path, O_RDONLY);
+    dup2(in, 0);
   }
-  if (out_argv != NULL) {
-    out = (open(out_argv, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR), 1);
+  if (out_path != NULL) {
+    printf("open(%s)\n", out_path);
+    out = open(out_path, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+    dup2(out, 1);
   }
   close(in);
   close(out);
+  printf("=== redirect END ===\n");
 }
 
 /**
