@@ -97,7 +97,16 @@ void loop() {
   char** argv;
   int status;
   do {
-    printf("mash > ");
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    char* delims = "/";
+    char* temp = strtok(cwd, delims);
+    char* dir;
+    while (temp != NULL) {
+      dir = temp;
+      temp = strtok(NULL, delims);
+    }
+    printf("-> %s ", dir);
     line = get_input();
     argv = split(line);
     status = execute(argv);
