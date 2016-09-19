@@ -8,8 +8,10 @@
 #ifndef COMMANDS_H_
 #define COMMANDS_H_
 
-int command_cd(char** argv);
-int command_exit(char** argv);
+int mash_cd(char** argv);
+int mash_getenv(char** argv);
+int mash_setenv(char** argv);
+int mash_exit(char** argv);
 
 extern char* command_labels[];
 extern int (*command_functions[]) (char**);

@@ -16,12 +16,12 @@ char* command_labels[] = {
 };
 
 int (*command_functions[]) (char**) = {
-  &command_cd,
-  &command_exit,
+  &mash_cd,
+  &mash_exit,
   NULL
 };
 
-int command_cd(char** argv) {
+int mash_cd(char** argv) {
   if (argv[1] == NULL) {
     chdir("~");
   } else {
@@ -32,6 +32,6 @@ int command_cd(char** argv) {
   return 1;
 }
 
-int command_exit(char** argv) {
+int mash_exit(char** argv) {
   return 0;
 }
