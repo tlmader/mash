@@ -11,12 +11,14 @@
 
 char* command_labels[] = {
   "cd",
+  "setenv",
   "exit",
   NULL
 };
 
 int (*command_functions[]) (char**) = {
   &mash_cd,
+  &mash_setenv,
   &mash_exit,
   NULL
 };
@@ -26,8 +28,22 @@ int mash_cd(char** argv) {
     chdir("~");
   } else {
     if (chdir(argv[1]) != 0) {
-      printf("cd: no such file or directory: %s\n", argv[1]);
+      printf("mash: cd: no such file or directory: %s\n", argv[1]);
     }
+  }
+  return 1;
+}
+
+int mash_setenv(char** argv) {
+  if (argv[1] == NULL) {
+    return 1;
+  }
+  FILE* file = fopen("mash_env", "a");
+  if (file == NULL) {
+    printf("mash: setenv: error opening mash_env");
+  } else {
+    fprintf(file, "%s\n", argv[1]);
+    fclose(file);
   }
   return 1;
 }

@@ -34,8 +34,7 @@ char* get_input() {
  * @return the tokens
  */
 char** split(char* line, char* delims) {
-  int bufsize = 64;
-  char** tokens = malloc(bufsize * sizeof(char*));
+  char** tokens = malloc(64 * sizeof(char*));
   char* token = strtok(line, delims);
   int i = 0;
   while (token != NULL) {
@@ -182,13 +181,38 @@ int redirect(char** argv) {
  * @return the args after replacements
  */
 char** replace_env_vars(char** argv) {
+  char** mash_env_vars = malloc(64 * sizeof(char**));
+  char** mash_env_values = malloc(64 * sizeof(char**));
+  FILE* file = fopen("mash_env", "r");
+  char * line = NULL;
+  size_t len = 0;
+  if (file == NULL) {
+    perror("mash: env: error opening mash_env");
+  }
   int i = 0;
-  for(i = 0; argv[i] != NULL; i++){
-      if(*argv[i] == '$'){
-          if (getenv(argv[i] + 1) != NULL) {
-              argv[i] = getenv(argv[i] + 1); // save off the argument
-          }
+  while (getline(&line, &len, file) != -1) {
+    char** env_tokens = split(line, "=\"");
+    mash_env_vars[i] = env_tokens[0];
+    mash_env_values[i] = env_tokens[1];
+    i++;
+  }
+  mash_env_vars[i] = NULL;
+  mash_env_values[i] = NULL;
+  fclose(file);
+    int j = 0;
+  for(j = 0; argv[j] != NULL; j++){
+    if(*argv[j] == '$'){
+      int is_mash_var = 0;
+      for(int k = 0; mash_env_vars[k] != NULL; j++) {
+        if (strcmp(argv[i], mash_env_vars[k]) == 0) {
+          argv[j] = mash_env_values[k];
+          is_mash_var = 1;
+        }
       }
+      if (getenv(argv[i] + 1) != NULL && is_mash_var == 0) {
+        argv[i] = getenv(argv[i] + 1);
+      }
+    }
   }
   return argv;
 }
