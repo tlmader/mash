@@ -92,15 +92,15 @@ char** redirect(char** argv) {
 int run(char** argv, int use_redir) {
   int status;
   pid_t pid = fork();
-  if (pid == 0) {
+  if (pid == -1) {
+    perror("mash");
+    exit(1);
+  } else if (pid == 0) {
     if (use_redir) {
       argv = redirect(argv);
     }
     execvp(*argv, argv);
     printf("mash: command not found: %s\n", *argv);
-    exit(1);
-  } else if (pid < 0) {
-    perror("mash");
     exit(1);
   } else {
     while (wait(&status) != pid);
@@ -116,16 +116,16 @@ int run(char** argv, int use_redir) {
 */
 int run_with_pipe(char** argv) {
   int status;
+  int fd[2];
+  pipe(fd);
   pid_t pid = fork();
-  if (pid == 0) {
-    execvp(*argv, argv);
-    printf("mash: command not found: %s\n", *argv);
-    exit(1);
-  } else if (pid < 0) {
+  if (pid == -1) {
     perror("mash");
     exit(1);
+  } else if (pid == 0) {
+    close(fd[0]);
   } else {
-    while (wait(&status) != pid);
+    close(fd[1]);
   }
   return 1;
 }
