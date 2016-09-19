@@ -57,12 +57,10 @@ int check_mash_commands(char** argv) {
   if (*argv == NULL) {
     return -1;
   }
-  int i = 0;
-  while (command_labels[i] != NULL) {
+  for(int i= 0; command_labels[i] != NULL; i++) {
     if (strcmp(argv[0], command_labels[i]) == 0) {
       return i;
     }
-    i++;
   }
   return -1;
 }
@@ -133,16 +131,15 @@ int pipe_commands(char** commands) {
  * Handles stream redirection and returns the args for the command.
  *
  * @param argv a vector of args
- * @return the vector of args for the command
+ * @return the args for the command
  */
 int redirect(char** argv) {
-  int i = 0;
   int in = 0;
   int out = 0;
   int add_to_command = 1;
   int bufsize = 64;
   char** command = malloc(bufsize * sizeof(char**));
-  while (argv[i] != NULL) {
+  for (int i = 0; argv[i] != NULL; i++) {
     if (strcmp(argv[i], "<") == 0 || strcmp(argv[i], ">") == 0) {
       if (add_to_command) {
         add_to_command = 0;
@@ -174,9 +171,26 @@ int redirect(char** argv) {
     if (add_to_command) {
       command[i] = argv[i];
     }
-    i++;
   }
   return 1;
+}
+
+/**
+ * Replaces args beginning with '$' with their getenv() result.
+ *
+ * @param argv a vector of args
+ * @return the args after replacements
+ */
+char** replace_env_vars(char** argv) {
+  int i = 0;
+  for(i = 0; argv[i] != NULL; i++){
+      if(*argv[i] == '$'){
+          if (getenv(argv[i] + 1) != NULL) {
+              argv[i] = getenv(argv[i] + 1); // save off the argument
+          }
+      }
+  }
+  return argv;
 }
 
 /**
@@ -223,7 +237,7 @@ int loop() {
     char* line = get_input();
     char* line_cpy = (char*)malloc(sizeof(*line));
     strcpy(line_cpy, line);
-    char** argv = split(line_cpy, " \t\r\n\a");
+    char** argv = replace_env_vars(split(line_cpy, " \t\r\n\a"));
     int i;
     if ((i = check_mash_commands(argv)) >= 0) {
       status = (*command_functions[i])(argv);
@@ -247,6 +261,7 @@ int loop() {
  *
  * @param argc the number of args
  * @param argv the vector of args
+ * @return the status
  */
 int main(int argc, char** argv) {
   return loop();
