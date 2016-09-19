@@ -191,7 +191,7 @@ char** replace_env_vars(char** argv) {
   }
   int i = 0;
   while (getline(&line, &len, file) != -1) {
-    char** env_tokens = split(line, "=\"");
+    char** env_tokens = split(line, "=");
     mash_env_vars[i] = env_tokens[0];
     mash_env_values[i] = env_tokens[1];
     i++;
@@ -199,13 +199,12 @@ char** replace_env_vars(char** argv) {
   mash_env_vars[i] = NULL;
   mash_env_values[i] = NULL;
   fclose(file);
-    int j = 0;
-  for(j = 0; argv[j] != NULL; j++){
-    if(*argv[j] == '$'){
+  for(i = 0; argv[i] != NULL; i++){
+    if(*argv[i] == '$'){
       int is_mash_var = 0;
-      for(int k = 0; mash_env_vars[k] != NULL; j++) {
-        if (strcmp(argv[i], mash_env_vars[k]) == 0) {
-          argv[j] = mash_env_values[k];
+      for(int j = 0; mash_env_vars[j] != NULL; j++) {
+        if (strcmp(argv[i], mash_env_vars[j]) == 0) {
+          argv[i] = mash_env_values[j];
           is_mash_var = 1;
         }
       }
