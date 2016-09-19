@@ -137,26 +137,25 @@ int execute(char** argv, int use_redir) {
  * @param out a pipe output
  * return the status
  */
-int pipe_spawn_child(int in, int out, char** command) {
+void pipe_spawn_child(char** command, int input, int output) {
   int status;
   pid_t pid = fork();
   if (pid == -1) {
     perror("mash");
     exit(1);
   } else if (pid == 0) {
-    if (in != 0) {
-      dup2(in, 0);
-      close(in);
+    if (input != 0) {
+      dup2(input, 0);
+      close(input);
     }
-    if (out != 1) {
-      dup2(out, 1);
-      close(out);
+    if (output != 1) {
+      dup2(output, 1);
+      close(output);
     }
-    return execvp(*command, command);
+    execvp(*command, command);
   } else {
     while (wait(&status) != pid);
   }
-  return pid;
 }
 
 /**
@@ -173,17 +172,17 @@ int pipe_commands(char** commands) {
     exit(1);
   } else if (pid == 0) {
     int i = 0;
-    int in = 0;
+    int input = 0;
     int fd[2];
     while (commands[i + 1] != NULL) {
       pipe(fd);
-      pipe_spawn_child(in, fd[1], split(commands[i], " \t\r\n\a"));
+      pipe_spawn_child(split(commands[i], " \t\r\n\a"), input, fd[1]);
       close(fd[1]);
-      in = fd[0];
+      input = fd[0];
       i++;
     }
-    if (in != 0) {
-      dup2(in, 0);
+    if (input != 0) {
+      dup2(input, 0);
     }
     char** last_command = split(commands[i], " \t\r\n\a");
     execvp(*last_command, last_command);
