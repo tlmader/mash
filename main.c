@@ -30,6 +30,7 @@ char* get_input() {
  * Modifies a string by breaking into tokens.
  *
  * @param line a string to be split
+ * @param delims a string of delimiters
  * @return the tokens
  */
 char** split(char* line, char* delims) {
@@ -49,8 +50,8 @@ char** split(char* line, char* delims) {
 /**
  * Handles stream redirection and returns the args for the command.
  *
- * @param argv the vector of args
- * @param the vector of args for the command
+ * @param argv a vector of args
+ * @return the vector of args for the command
  */
 char** redirect(char** argv) {
   int i = 0;
@@ -84,17 +85,39 @@ char** redirect(char** argv) {
 /**
 * Forks and executes a process.
 *
-* @param argv the vector of args
+* @param argv a vector of args
+* @param use_redir a condition for using redirection
 * @return the status
 */
-int run(char** argv, int redir, int pipe) {
-  pid_t pid;
+int run(char** argv, int use_redir) {
   int status;
-  pid = fork();
+  pid_t pid = fork();
   if (pid == 0) {
-    if (redir) {
+    if (use_redir) {
       argv = redirect(argv);
     }
+    execvp(*argv, argv);
+    printf("mash: command not found: %s\n", *argv);
+    exit(1);
+  } else if (pid < 0) {
+    perror("mash");
+    exit(1);
+  } else {
+    while (wait(&status) != pid);
+  }
+  return 1;
+}
+
+/**
+* Forks and executes piped processes.
+*
+* @param argv a vector of args
+* @return the status
+*/
+int run_with_pipe(char** argv) {
+  int status;
+  pid_t pid = fork();
+  if (pid == 0) {
     execvp(*argv, argv);
     printf("mash: command not found: %s\n", *argv);
     exit(1);
@@ -111,9 +134,11 @@ int run(char** argv, int redir, int pipe) {
 * Executes a command if recognized, otherwise enters run().
 *
 * @param argv the vector of args
+* @param use_redir a condition for using redirection
+* @param use_pipe a condition for using pipes
 * @return the status returned by run()
 */
-int execute(char** argv, int redir, int pipe) {
+int execute(char** argv, int use_redir, int use_pipe) {
   if (*argv == NULL) {
     return 1;
   }
@@ -124,7 +149,10 @@ int execute(char** argv, int redir, int pipe) {
     }
     i++;
   }
-  return run(argv, redir, pipe);
+  if (use_pipe) {
+    return run_with_pipe(argv);
+  }
+  return run(argv, use_redir);
 }
 
 /**
