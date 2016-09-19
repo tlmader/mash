@@ -109,14 +109,14 @@ int run(char** argv, int use_redir) {
 }
 
 /**
-* Executes a command if recognized, otherwise enters run().
+* Checks for a mash command, otherwise enters run().
 *
 * @param argv the vector of args
 * @param use_redir a condition for using redirection
 * @param use_pipe a condition for using pipes
 * @return the status returned by run()
 */
-int execute(char** argv, int use_redir) {
+int check_mash_commands(char** argv) {
   if (*argv == NULL) {
     return 1;
   }
@@ -127,7 +127,7 @@ int execute(char** argv, int use_redir) {
     }
     i++;
   }
-  return run(argv, use_redir);
+  return run(argv, 0);
 }
 
 /**
@@ -217,9 +217,9 @@ int loop() {
     } else if (strstr(line, "|")) {
       status = pipe_commands(split(line, "|"));
     } else if (strstr(line, "<") || strstr(line, ">")) {
-      status = execute(split(line, " \t\r\n\a"), 1);
+      status = run(split(line, " \t\r\n\a"), 1);
     } else {
-      status = execute(split(line, " \t\r\n\a"), 0);
+      status = check_mash_commands(split(line, " \t\r\n\a"));
     }
     free(line);
   }
