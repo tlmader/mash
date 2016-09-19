@@ -130,9 +130,20 @@ int execute(char** argv, int use_redir) {
   return run(argv, use_redir);
 }
 
-int spawn_proc(int in, int out, char** command) {
+/**
+ * Forks a child process using pipes.
+ *
+ * @param in a pipe input
+ * @param out a pipe output
+ * return the status
+ */
+int pipe_spawn_child(int in, int out, char** command) {
+  int status;
   pid_t pid = fork();
-  if (pid == 0) {
+  if (pid == -1) {
+    perror("mash");
+    exit(1);
+  } else if (pid == 0) {
     if (in != 0) {
       dup2(in, 0);
       close(in);
@@ -141,25 +152,45 @@ int spawn_proc(int in, int out, char** command) {
       dup2(out, 1);
       close(out);
     }
+    return execvp(*command, command);
+  } else {
+    while (wait(&status) != pid);
   }
-  return execvp(*command, command);
+  return pid;
 }
 
-int fork_pipes(char** commands) {
-  int i = 0;
-  int in, fd [2];
-  in = 0;
-  while (commands[i + 1] != NULL) {
-    pipe (fd);
-    spawn_proc (in, fd [1], split(commands[i], " \t\r\n\a"));
-    close (fd [1]);
-    in = fd [0];
+/**
+ * Pipes multiple commands.
+ *
+ * @param commands an array of commands
+ * return the status
+ */
+int pipe_commands(char** commands) {
+  int status;
+  pid_t pid = fork();
+  if (pid == -1) {
+    perror("mash");
+    exit(1);
+  } else if (pid == 0) {
+    int i = 0;
+    int in = 0;
+    int fd[2];
+    while (commands[i + 1] != NULL) {
+      pipe(fd);
+      pipe_spawn_child(in, fd[1], split(commands[i], " \t\r\n\a"));
+      close(fd[1]);
+      in = fd[0];
+      i++;
+    }
+    if (in != 0) {
+      dup2(in, 0);
+    }
+    char** last_command = split(commands[i], " \t\r\n\a");
+    execvp(*last_command, last_command);
+  } else {
+    while (wait(&status) != pid);
   }
-  if (in != 0) {
-    dup2 (in, 0);
-  }
-  char** last_command = split(commands[i], " \t\r\n\a");
-  return execvp (*last_command, last_command);
+  return 1;
 }
 
 /**
@@ -185,7 +216,7 @@ int loop() {
     if ((strstr(line, "|") && strstr(line, "<")) || (strstr(line, "|") && strstr(line, ">"))) {
       printf("mash: cannot parse '|' with '<' or '>'\n");
     } else if (strstr(line, "|")) {
-      return fork_pipes(split(line, "|"));
+      status = pipe_commands(split(line, "|"));
     } else if (strstr(line, "<") || strstr(line, ">")) {
       status = execute(split(line, " \t\r\n\a"), 1);
     } else {
