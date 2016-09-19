@@ -109,28 +109,6 @@ int run(char** argv, int use_redir) {
 }
 
 /**
-* Forks and executes piped processes.
-*
-* @param argv a vector of args
-* @return the status
-*/
-int run_with_pipe(char** argv) {
-  int status;
-  int fd[2];
-  pipe(fd);
-  pid_t pid = fork();
-  if (pid == -1) {
-    perror("mash");
-    exit(1);
-  } else if (pid == 0) {
-    close(fd[0]);
-  } else {
-    close(fd[1]);
-  }
-  return 1;
-}
-
-/**
 * Executes a command if recognized, otherwise enters run().
 *
 * @param argv the vector of args
@@ -138,7 +116,7 @@ int run_with_pipe(char** argv) {
 * @param use_pipe a condition for using pipes
 * @return the status returned by run()
 */
-int execute(char** argv, int use_redir, int use_pipe) {
+int execute(char** argv, int use_redir) {
   if (*argv == NULL) {
     return 1;
   }
@@ -149,10 +127,39 @@ int execute(char** argv, int use_redir, int use_pipe) {
     }
     i++;
   }
-  if (use_pipe) {
-    return run_with_pipe(argv);
-  }
   return run(argv, use_redir);
+}
+
+int spawn_proc(int in, int out, char** command) {
+  pid_t pid = fork();
+  if (pid == 0) {
+    if (in != 0) {
+      dup2(in, 0);
+      close(in);
+    }
+    if (out != 1) {
+      dup2(out, 1);
+      close(out);
+    }
+  }
+  return execvp(*command, command);
+}
+
+int fork_pipes(char** commands) {
+  int i = 0;
+  int in, fd [2];
+  in = 0;
+  while (commands[i + 1] != NULL) {
+    pipe (fd);
+    spawn_proc (in, fd [1], split(commands[i], " \t\r\n\a"));
+    close (fd [1]);
+    in = fd [0];
+  }
+  if (in != 0) {
+    dup2 (in, 0);
+  }
+  char** last_command = split(commands[i], " \t\r\n\a");
+  return execvp (*last_command, last_command);
 }
 
 /**
@@ -162,7 +169,6 @@ int execute(char** argv, int use_redir, int use_pipe) {
  */
 int loop() {
   char* line;
-  char** tokens;
   int status = 1;
   while (status) {
     char cwd[1024];
@@ -179,19 +185,13 @@ int loop() {
     if ((strstr(line, "|") && strstr(line, "<")) || (strstr(line, "|") && strstr(line, ">"))) {
       printf("mash: cannot parse '|' with '<' or '>'\n");
     } else if (strstr(line, "|")) {
-      tokens = split(line, "|");
-      int i = 0;
-      while (tokens[i] != NULL && status) {
-        status = execute(split(line, " \t\r\n\a"), 0, 1);
-        i++;
-      }
+      return fork_pipes(split(line, "|"));
     } else if (strstr(line, "<") || strstr(line, ">")) {
-      execute(split(line, " \t\r\n\a"), 1, 0);
+      status = execute(split(line, " \t\r\n\a"), 1);
     } else {
-      status = execute(split(line, " \t\r\n\a"), 0, 0);
+      status = execute(split(line, " \t\r\n\a"), 0);
     }
     free(line);
-    free(tokens);
   }
   return status;
 }
