@@ -109,28 +109,6 @@ int run(char** argv, int use_redir) {
 }
 
 /**
-* Checks for a mash command, otherwise enters run().
-*
-* @param argv the vector of args
-* @param use_redir a condition for using redirection
-* @param use_pipe a condition for using pipes
-* @return the status returned by run()
-*/
-int check_mash_commands(char** argv) {
-  if (*argv == NULL) {
-    return 1;
-  }
-  int i = 0;
-  while (command_labels[i] != NULL) {
-    if (strcmp(argv[0], command_labels[i]) == 0) {
-      return (*command_functions[i])(argv);
-    }
-    i++;
-  }
-  return run(argv, 0);
-}
-
-/**
  * Forks a child process using pipes.
  *
  * @param in a pipe input
@@ -190,6 +168,26 @@ int pipe_commands(char** commands) {
     while (wait(&status) != pid);
   }
   return 1;
+}
+
+/**
+* Checks for a mash command, otherwise enters run().
+*
+* @param argv the vector of args
+* @return the status returned by run()
+*/
+int check_mash_commands(char** argv) {
+  if (*argv == NULL) {
+    return 1;
+  }
+  int i = 0;
+  while (command_labels[i] != NULL) {
+    if (strcmp(argv[0], command_labels[i]) == 0) {
+      return (*command_functions[i])(argv);
+    }
+    i++;
+  }
+  return run(argv, 0);
 }
 
 /**
