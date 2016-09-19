@@ -87,12 +87,14 @@ char** redirect(char** argv) {
 * @param argv the vector of args
 * @return the status
 */
-int run(char** argv) {
+int run(char** argv, int redir, int pipe) {
   pid_t pid;
   int status;
   pid = fork();
   if (pid == 0) {
-    argv = redirect(argv);
+    if (redir) {
+      argv = redirect(argv);
+    }
     execvp(*argv, argv);
     printf("mash: command not found: %s\n", *argv);
     exit(1);
@@ -111,7 +113,7 @@ int run(char** argv) {
 * @param argv the vector of args
 * @return the status returned by run()
 */
-int execute(char** argv) {
+int execute(char** argv, int redir, int pipe) {
   if (*argv == NULL) {
     return 1;
   }
@@ -122,7 +124,7 @@ int execute(char** argv) {
     }
     i++;
   }
-  return run(argv);
+  return run(argv, redir, pipe);
 }
 
 /**
@@ -134,7 +136,7 @@ int loop() {
   char* line;
   char** tokens;
   int status = 1;
-  do {
+  while (status) {
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
     char* delims = "/";
@@ -146,15 +148,23 @@ int loop() {
     }
     printf("-> %s ", dir);
     line = get_input();
-    tokens = split(line, "|");
-    int i = 0;
-    while (tokens[i] != NULL && status) {
-      status = execute(split(line, " \t\r\n\a"));
-      i++;
+    if ((strstr(line, "|") && strstr(line, "<")) || (strstr(line, "|") && strstr(line, ">"))) {
+      printf("mash: cannot parse '|' with '<' or '>'\n");
+    } else if (strstr(line, "|")) {
+      tokens = split(line, "|");
+      int i = 0;
+      while (tokens[i] != NULL && status) {
+        status = execute(split(line, " \t\r\n\a"), 0, 1);
+        i++;
+      }
+    } else if (strstr(line, "<") || strstr(line, ">")) {
+      execute(split(line, " \t\r\n\a"), 1, 0);
+    } else {
+      status = execute(split(line, " \t\r\n\a"), 0, 0);
     }
     free(line);
     free(tokens);
-  } while (status);
+  }
   return status;
 }
 
