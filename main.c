@@ -48,75 +48,23 @@ char** split(char* line, char* delims) {
 }
 
 /**
- * Handles stream redirection and returns the args for the command.
- *
- * @param argv a vector of args
- * @return the vector of args for the command
- */
-int redirect(char** argv) {
+* Checks for a mash command and returns its index if found, -1 if not found.
+*
+* @param argv the vector of args
+* @return the index or -1
+*/
+int check_mash_commands(char** argv) {
+  if (*argv == NULL) {
+    return -1;
+  }
   int i = 0;
-  int in = 0;
-  int out = 0;
-  int add_to_command = 1;
-  int bufsize = 64;
-  char** command = malloc(bufsize * sizeof(char**));
-  while (argv[i] != NULL) {
-    if (strcmp(argv[i], "<") == 0 || strcmp(argv[i], ">") == 0) {
-      if (add_to_command) {
-        add_to_command = 0;
-        command[i] = NULL;
-      }
-      int status;
-      pid_t pid = fork();
-      if (pid == -1) {
-        perror("mash");
-        exit(1);
-      } else if (pid == 0) {
-        if (strcmp(argv[i], "<") == 0) {
-          in = open(argv[i + 1], O_RDONLY);
-          dup2(in, 0);
-          close(in);
-        } else if (strcmp(argv[i], ">") == 0) {
-          out = open(argv[i + 1], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-          dup2(out, 1);
-          close(out);
-        }
-        execvp(*command, command);
-        printf("mash: command not found: %s\n", *command);
-        exit(1);
-      } else {
-        while (wait(&status) != pid);
-      }
-    }
-    if (add_to_command) {
-      command[i] = argv[i];
+  while (command_labels[i] != NULL) {
+    if (strcmp(argv[0], command_labels[i]) == 0) {
+      return i;
     }
     i++;
   }
-  return 1;
-}
-
-/**
-* Forks and executes a process.
-*
-* @param argv a vector of args
-* @param use_redir a condition for using redirection
-* @return the status
-*/
-int run(char** argv) {
-  int status;
-  pid_t pid = fork();
-  if (pid == -1) {
-    perror("mash");
-    exit(1);
-  } else if (pid == 0) {
-    execvp(*argv, argv);
-    printf("mash: command not found: %s\n", *argv);
-    exit(1);
-  } else {
-    while (wait(&status) != pid);
-  }
-  return 1;
+  return -1;
 }
 
 /**
@@ -182,23 +130,76 @@ int pipe_commands(char** commands) {
 }
 
 /**
-* Checks for a mash command, otherwise enters run().
-*
-* @param argv the vector of args
-* @return the status returned by run()
-*/
-int check_mash_commands(char** argv) {
-  if (*argv == NULL) {
-    return 1;
-  }
+ * Handles stream redirection and returns the args for the command.
+ *
+ * @param argv a vector of args
+ * @return the vector of args for the command
+ */
+int redirect(char** argv) {
   int i = 0;
-  while (command_labels[i] != NULL) {
-    if (strcmp(argv[0], command_labels[i]) == 0) {
-      return (*command_functions[i])(argv);
+  int in = 0;
+  int out = 0;
+  int add_to_command = 1;
+  int bufsize = 64;
+  char** command = malloc(bufsize * sizeof(char**));
+  while (argv[i] != NULL) {
+    if (strcmp(argv[i], "<") == 0 || strcmp(argv[i], ">") == 0) {
+      if (add_to_command) {
+        add_to_command = 0;
+        command[i] = NULL;
+      }
+      int status;
+      pid_t pid = fork();
+      if (pid == -1) {
+        perror("mash");
+        exit(1);
+      } else if (pid == 0) {
+        if (strcmp(argv[i], "<") == 0) {
+          in = open(argv[i + 1], O_RDONLY);
+          dup2(in, 0);
+          close(in);
+        } else if (strcmp(argv[i], ">") == 0) {
+          out = open(argv[i + 1], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR |
+                                  S_IRGRP | S_IWGRP | S_IWUSR);
+          dup2(out, 1);
+          close(out);
+        }
+        execvp(*command, command);
+        printf("mash: command not found: %s\n", *command);
+        exit(1);
+      } else {
+        while (wait(&status) != pid);
+      }
+    }
+    if (add_to_command) {
+      command[i] = argv[i];
     }
     i++;
   }
-  return 0;
+  return 1;
+}
+
+/**
+* Forks and executes a process.
+*
+* @param argv a vector of args
+* @param use_redir a condition for using redirection
+* @return the status
+*/
+int run(char** argv) {
+  int status;
+  pid_t pid = fork();
+  if (pid == -1) {
+    perror("mash");
+    exit(1);
+  } else if (pid == 0) {
+    execvp(*argv, argv);
+    printf("mash: command not found: %s\n", *argv);
+    exit(1);
+  } else {
+    while (wait(&status) != pid);
+  }
+  return 1;
 }
 
 /**
@@ -207,7 +208,6 @@ int check_mash_commands(char** argv) {
  * @return the status
  */
 int loop() {
-  char* line;
   int status = 1;
   while (status) {
     char cwd[1024];
@@ -220,21 +220,24 @@ int loop() {
       temp = strtok(NULL, delims);
     }
     printf("-> %s ", dir);
-    line = get_input();
-    char** argv = split(line, " \t\r\n\a");
-    if (check_mash_commands(argv) == 0) {
-      if ((strstr(line, "|") && strstr(line, "<")) || (strstr(line, "|") && strstr(line, ">"))) {
-        printf("mash: cannot parse '|' with '<' or '>'\n");
-      } else if (strstr(line, "|")) {
-        status = pipe_commands(split(line, "|"));
-      } else if (strstr(line, "<") || strstr(line, ">")) {
-        status = redirect(argv);
-      } else {
-        status = run(argv);
-      }
+    char* line = get_input();
+    char* line_cpy = (char*)malloc(sizeof(*line));
+    strcpy(line_cpy, line);
+    char** argv = split(line_cpy, " \t\r\n\a");
+    int i;
+    if ((i = check_mash_commands(argv)) >= 0) {
+      status = (*command_functions[i])(argv);
+    } else if ((strstr(line, "|") && strstr(line, "<")) ||
+               (strstr(line, "|") && strstr(line, ">"))) {
+      printf("mash: cannot parse '|' with '<' or '>'\n");
+    } else if (strstr(line, "|")) {
+      status = pipe_commands(split(line, "|"));
+    } else if (strstr(line, "<") || strstr(line, ">")) {
+      status = redirect(argv);
+    } else {
+      status = run(argv);
     }
     free(line);
-    free(argv);
   }
   return status;
 }
