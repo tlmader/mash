@@ -9,6 +9,7 @@
 #define COMMANDS_H_
 
 int mash_cd(char** argv);
+int mash_pwd(char** argv);
 int mash_getenv(char** argv);
 int mash_setenv(char** argv);
 int mash_exit(char** argv);

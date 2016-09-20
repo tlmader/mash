@@ -201,13 +201,8 @@ char** replace_env_vars(char** argv) {
       // fclose(file);
       if (use_getenv) {
         argv[i] = getenv(argv[i] + 1);
-        printf("getenv: %s\n", argv[i]);
       }
     }
-    printf("argv[%i] = %s\n", i, argv[i]);
-  }
-  for (int i = 0; argv[i] != NULL; i++) {
-    printf("replace: argv[%i]: %s\n", i, argv[i]);
   }
   return argv;
 }
@@ -257,9 +252,6 @@ int loop() {
     char* line_cpy = (char*)malloc(sizeof(*line));
     strcpy(line_cpy, line);
     char** argv = replace_env_vars(split(line_cpy, " \t\r\n\a"));
-    for (int i = 0; argv[i] != NULL; i++) {
-      printf("loop: argv[%i]: %s\n", i, argv[i]);
-    }
     int i;
     if ((i = check_mash_commands(argv)) >= 0) {
       status = (*command_functions[i])(argv);

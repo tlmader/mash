@@ -11,6 +11,7 @@
 
 char* command_labels[] = {
   "cd",
+  "pwd",
   "setenv",
   "exit",
   NULL
@@ -18,6 +19,7 @@ char* command_labels[] = {
 
 int (*command_functions[]) (char**) = {
   &mash_cd,
+  &mash_pwd,
   &mash_setenv,
   &mash_exit,
   NULL
@@ -31,6 +33,15 @@ int mash_cd(char** argv) {
       printf("mash: cd: no such file or directory: %s\n", argv[1]);
     }
   }
+  return 1;
+}
+
+int mash_pwd(char** argv) {
+   char dir[1024];
+   if (getcwd(dir, sizeof(dir)) != NULL)
+       fprintf(stdout, "mash: current working dir: %s\n", dir);
+   else
+       perror("mash");
   return 1;
 }
 
