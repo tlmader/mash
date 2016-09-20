@@ -1,5 +1,5 @@
 CSCI 4401: Programming Assignment 1
-
+--
 Author: Ted Mader
 
 A simple shell using the POSIX system call API.
