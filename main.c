@@ -34,8 +34,8 @@ char* get_input() {
  * @return the tokens
  */
 char** split(char* line, char* delims) {
-  char** tokens = malloc(64 * sizeof(char*));
   char* token = strtok(line, delims);
+  char** tokens = malloc(64 * sizeof(char*));
   int i = 0;
   while (token != NULL) {
     tokens[i] = token;
@@ -133,10 +133,10 @@ int pipe_commands(char** commands) {
  * @return the args for the command
  */
 int redirect(char** argv) {
-  int in = 0;
-  int out = 0;
   int add_to_command = 1;
   int bufsize = 64;
+  int in = 0;
+  int out = 0;
   char** command = malloc(bufsize * sizeof(char**));
   for (int i = 0; argv[i] != NULL; i++) {
     if (strcmp(argv[i], "<") == 0 || strcmp(argv[i], ">") == 0) {
@@ -181,19 +181,22 @@ int redirect(char** argv) {
  * @return the args after replacements
  */
 char** replace_env_vars(char** argv) {
+  int i = 0;
+  char line[256];
   char** mash_env_vars = malloc(64 * sizeof(char**));
   char** mash_env_values = malloc(64 * sizeof(char**));
   FILE* file = fopen("mash_env", "r");
-  char * line = NULL;
-  size_t len = 0;
   if (file == NULL) {
     perror("mash: env: error opening mash_env");
   }
-  int i = 0;
-  while (getline(&line, &len, file) != -1) {
-    char** env_tokens = split(line, "=");
-    mash_env_vars[i] = env_tokens[0];
-    mash_env_values[i] = env_tokens[1];
+  while (fgets(line, sizeof(line), file)) {
+    printf("line: %s\n", line);
+    mash_env_vars[i] = strtok(line, "=");
+    mash_env_values[i] = strtok(NULL, "=");
+    printf("mash_env_vars[0]: %s\n", mash_env_vars[0]);
+    printf("mash_env_values[0]: %s\n", mash_env_values[0]);
+    printf("mash_env_vars[1]: %s\n", mash_env_vars[1]);
+    printf("mash_env_values[1]: %s\n", mash_env_values[1]);
     i++;
   }
   mash_env_vars[i] = NULL;
@@ -201,17 +204,24 @@ char** replace_env_vars(char** argv) {
   fclose(file);
   for(i = 0; argv[i] != NULL; i++){
     if(*argv[i] == '$'){
-      int is_mash_var = 0;
+      printf("$ detected!\n");
+      int use_getenv = 1;
+      printf("i: %i\n", i);
       for(int j = 0; mash_env_vars[j] != NULL; j++) {
-        if (strcmp(argv[i], mash_env_vars[j]) == 0) {
-          argv[i] = mash_env_values[j];
-          is_mash_var = 1;
+        printf("strcmp: %s, %s\n", argv[i], mash_env_vars[j]);
+        if (mash_env_values[j] != NULL &&
+            strcmp(argv[i] + 1, mash_env_vars[j]) == 0) {
+          printf("strcpy: %s, %s\n", argv[i], mash_env_vars[j]);
+          strcpy(argv[i], mash_env_values[j]);
+          use_getenv = 0;
         }
       }
-      if (getenv(argv[i] + 1) != NULL && is_mash_var == 0) {
+      if (use_getenv) {
         argv[i] = getenv(argv[i] + 1);
+        printf("getenv: %s\n", argv[i]);
       }
     }
+    printf("argv[%i] = %s\n", i, argv[i]);
   }
   return argv;
 }
