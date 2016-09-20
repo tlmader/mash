@@ -5,7 +5,7 @@
 # Date: 2016-09-14
 #
 
-CC = clang
+CC = gcc
 TARGETS = mash.exe
 
 all: $(TARGETS)
