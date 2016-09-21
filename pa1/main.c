@@ -184,21 +184,12 @@ char** replace_env_vars(char** argv) {
   for(int i = 0; argv[i] != NULL; i++) {
     if(*argv[i] == '$') {
       int use_getenv = 1;
-      // FILE* file = fopen("mash_env", "r");
-      // if (file == NULL) {
-      //   perror("mash: env: error opening mash_env");
-      // }
-      // char line[256];
-      // while (fgets(line, sizeof(line), file)) {
-      //   char* var = strtok(line, "=");
-      //   char* value = strtok(NULL, "=");
-      //   if (strcmp(argv[i] + 1, var) == 0) {
-      //     printf("match\n");
-      //     argv[i] = value;
-      //     use_getenv = 0;
-      //   }
-      // }
-      // fclose(file);
+      for (int j = 0; mash_env_vars != NULL; j++) {
+        if (strcmp(argv[i] + 1, mash_env_vars[j]) == 0) {
+          argv[i] = mash_env_vals[j];
+          use_getenv = 0;
+        }
+      }
       if (use_getenv) {
         argv[i] = getenv(argv[i] + 1);
       }
@@ -278,5 +269,6 @@ int loop() {
  * @return the status
  */
 int main(int argc, char** argv) {
+  update_mash_env();
   return loop();
 }
