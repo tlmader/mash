@@ -47,29 +47,11 @@ char** split(char* line, char* delims) {
 }
 
 /**
-* Checks for a mash command and returns its index if found, -1 if not found.
-*
-* @param argv the vector of args
-* @return the index or -1
-*/
-int check_mash_commands(char** argv) {
-  if (*argv == NULL) {
-    return -1;
-  }
-  for(int i= 0; command_labels[i] != NULL; i++) {
-    if (strcmp(argv[0], command_labels[i]) == 0) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-/**
  * Forks a child process using pipes.
  *
  * @param in a pipe input
  * @param out a pipe output
- * return the status
+ * return 1 if successful
  */
 void pipe_spawn_child(char** command, int input, int output) {
   int status;
@@ -96,7 +78,7 @@ void pipe_spawn_child(char** command, int input, int output) {
  * Pipes multiple commands.
  *
  * @param commands an array of commands
- * return the status
+ * return 1 if successful
  */
 int pipe_commands(char** commands) {
   int status;
@@ -129,7 +111,7 @@ int pipe_commands(char** commands) {
 /**
  * Handles stream redirection and returns the args for the command.
  *
- * @param argv a vector of args
+ * @param argv an array of args
  * @return the args for the command
  */
 int redirect(char** argv) {
@@ -175,17 +157,35 @@ int redirect(char** argv) {
 }
 
 /**
+* Checks for a mash command and returns its index if found, -1 if not found.
+*
+* @param argv an array of args
+* @return the index or -1
+*/
+int check_mash_commands(char** argv) {
+  if (*argv == NULL) {
+    return -1;
+  }
+  for(int i= 0; mash_commands[i] != NULL; i++) {
+    if (strcmp(argv[0], mash_commands[i]) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
  * Replaces args beginning with '$' with their mash env or getenv() result.
  *
- * @param argv a vector of args
+ * @param argv an array of args
  * @return the args after replacements
  */
-char** replace_env_vars(char** argv) {
+char** check_mash_env(char** argv) {
   for(int i = 0; argv[i] != NULL; i++) {
     if(*argv[i] == '$') {
+      mash_refreshenv();
       int use_getenv = 1;
       for (int j = 0; mash_env_vars()[j] != NULL; j++) {
-        printf("mash_env_vars: %s", mash_env_vars()[j]);
         if (strcmp(argv[i] + 1, mash_env_vars()[j]) == 0) {
           argv[i] = mash_env_vals()[j];
           use_getenv = 0;
@@ -202,9 +202,9 @@ char** replace_env_vars(char** argv) {
 /**
 * Forks and executes a process.
 *
-* @param argv a vector of args
+* @param argv an array of args
 * @param use_redir a condition for using redirection
-* @return the status
+* @return 1 if successful
 */
 int run(char** argv) {
   int status;
@@ -225,7 +225,7 @@ int run(char** argv) {
 /**
  * Handles commands during the shell loop
  *
- * @return the status
+ * @return 1 if successful
  */
 int loop() {
   int status = 1;
@@ -243,10 +243,10 @@ int loop() {
     char* line = get_input();
     char* line_cpy = (char*)malloc(sizeof(*line));
     strcpy(line_cpy, line);
-    char** argv = replace_env_vars(split(line_cpy, " \t\r\n\a"));
+    char** argv = check_mash_env(split(line_cpy, " \t\r\n\a"));
     int i;
     if ((i = check_mash_commands(argv)) >= 0) {
-      status = (*command_functions[i])(argv);
+      status = (*mash_functions[i])(argv);
     } else if ((strstr(line, "|") && strstr(line, "<")) ||
                (strstr(line, "|") && strstr(line, ">"))) {
       printf("mash: cannot parse '|' with '<' or '>'\n");
@@ -267,9 +267,8 @@ int loop() {
  *
  * @param argc the number of args
  * @param argv the vector of args
- * @return the status
+ * @return 1 if successful
  */
 int main(int argc, char** argv) {
-  mash_refreshenv();
   return loop();
 }

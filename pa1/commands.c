@@ -22,7 +22,7 @@ char** mash_env_vals() {
   return vals;
 }
 
-char* command_labels[] = {
+char* mash_commands[] = {
   "cd",
   "pwd",
   "getenv",
@@ -32,12 +32,12 @@ char* command_labels[] = {
   NULL
 };
 
-int (*command_functions[]) (char**) = {
+int (*mash_functions[]) (char**) = {
   &mash_cd,
   &mash_pwd,
   &mash_getenv,
-  &mash_refreshenv,
   &mash_setenv,
+  &mash_refreshenv,
   &mash_exit,
   NULL
 };
@@ -64,12 +64,14 @@ int mash_pwd(char** argv) {
 
 int mash_getenv() {
   for (int j = 0; vars[j] != NULL; j++) {
-    printf("mash_env[%i]: %s=%s", j, vars[j], vals[j]);
+    printf("mash_env[%i]: %s=%s\n", j, vars[j], vals[j]);
   }
   return 1;
 }
 
 int mash_refreshenv() {
+  vars = malloc(256 * sizeof(char*));
+  vals = malloc(256 * sizeof(char*));
   FILE* file = fopen("mash_env", "r");
   if (file == NULL) {
     printf("mash: creating mash_env\n");
@@ -87,21 +89,16 @@ int mash_refreshenv() {
   int i = 0;
   while (fgets(line, sizeof(line), file)) {
     char* temp_var = strtok(line, "=");
-    char* temp_val = strtok(NULL, "=");
+    char* temp_val = strtok(NULL, "= \t\r\n\a");
     vars[i] = malloc(strlen(temp_var) + 1);
     vals[i] = malloc(strlen(temp_val) + 1);
-    // strcpy(mash_env_vars[i], temp_var);
-    // strcpy(mash_env_vals[i], temp_val);
-    vars[i] = strdup(temp_var);
-    vals[i] = strdup(temp_val);
+    strcpy(vars[i], temp_var);
+    strcpy(vals[i], temp_val);
     i++;
   }
   fclose(file);
   vars[i] = NULL;
   vals[i] = NULL;
-  for (int j = 0; vars[j] != NULL; j++) {
-    printf("mash_env[%i]: %s=%s", j, vars[j], vals[j]);
-  }
   return 1;
 }
 
@@ -116,10 +113,9 @@ int mash_setenv(char** argv) {
     fprintf(file, "%s\n", argv[1]);
     fclose(file);
   }
-  mash_refreshenv();
-  return 1;
+  return mash_refreshenv();
 }
 
-int mash_exit(char** argv) {
+int mash_exit() {
   return 0;
 }
