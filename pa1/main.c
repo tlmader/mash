@@ -184,7 +184,8 @@ char** replace_env_vars(char** argv) {
   for(int i = 0; argv[i] != NULL; i++) {
     if(*argv[i] == '$') {
       int use_getenv = 1;
-      for (int j = 0; mash_env_vars != NULL; j++) {
+      for (int j = 0; mash_env_vars[j] != NULL; j++) {
+        printf("mash_env_vars: %s", mash_env_vars[j]);
         if (strcmp(argv[i] + 1, mash_env_vars[j]) == 0) {
           argv[i] = mash_env_vals[j];
           use_getenv = 0;
@@ -269,6 +270,7 @@ int loop() {
  * @return the status
  */
 int main(int argc, char** argv) {
+  test_mash_env();
   update_mash_env();
   return loop();
 }

@@ -30,23 +30,40 @@ int (*command_functions[]) (char**) = {
   NULL
 };
 
+void test_mash_env() {
+  int i = 0;
+  printf("mash_env[%i]: %s=%s", i, mash_env_vars[i], mash_env_vals[i]);
+}
+
 void update_mash_env() {
   FILE* file = fopen("mash_env", "r");
   if (file == NULL) {
-    perror("mash: env: error opening mash_env");
+    printf("mash: creating mash_env\n");
+    file = fopen("mash_env", "w");
+    if (file == NULL) {
+      printf("mash: setenv: error creating mash_env\n");
+      fclose(file);
+    }
+  } else {
+    char** mash_env_vars = malloc(256 * sizeof(char*));
+    char** mash_env_vals = malloc(256 * sizeof(char*));
+    char line[256];
+    int i = 0;
+    while (fgets(line, sizeof(line), file)) {
+      char* var = malloc(strlen(line) + 1);
+      strcpy(var, strtok(line, "="));
+      char* val = malloc(strlen(line) + 1);
+      strcpy(val, strtok(NULL, "="));
+      mash_env_vars[i] = var;
+      mash_env_vals[i] = val;
+      i++;
+    }
+    fclose(file);
+    mash_env_vars[i] = NULL;
+    mash_env_vals[i] = NULL;
+    i = 0;
+    printf("mash_env[%i]: %s=%s", i, mash_env_vars[i], mash_env_vals[i]);
   }
-  char** mash_env_vars = malloc(256 * sizeof(char*));
-  char** mash_env_vals = malloc(256 * sizeof(char*));
-  char line[256];
-  int i = 0;
-  while (fgets(line, sizeof(line), file)) {
-    mash_env_vars[i] = strtok(line, "=");
-    mash_env_vals[i] = strtok(NULL, "=");
-    i++;
-  }
-  fclose(file);
-  mash_env_vars[i] = NULL;
-  mash_env_vals[i] = NULL;
 }
 
 int mash_cd(char** argv) {
