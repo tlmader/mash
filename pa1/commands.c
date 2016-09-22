@@ -78,12 +78,12 @@ int mash_refreshenv() {
   char line[256];
   int i = 0;
   while (fgets(line, sizeof(line), file)) {
-    char* var = malloc(strlen(line) + 1);
-    strcpy(var, strtok(line, "="));
-    char* val = malloc(strlen(line) + 1);
-    strcpy(val, strtok(NULL, "="));
-    mash_env_vars[i] = var;
-    mash_env_vals[i] = val;
+    // char* var = malloc(strlen(line) + 1);
+    // strcpy(var, strtok(line, "="));
+    // char* val = malloc(strlen(line) + 1);
+    // strcpy(val, strtok(NULL, "="));
+    mash_env_vars[i] = strdup(strtok(line, "="));
+    mash_env_vals[i] = strdup(strtok(NULL, "="));
     i++;
   }
   fclose(file);

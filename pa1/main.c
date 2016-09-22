@@ -258,6 +258,8 @@ int loop() {
       status = run(argv);
     }
     free(line);
+    free(mash_env_vars);
+    free(mash_env_vals);
   }
   return status;
 }
