@@ -13,12 +13,12 @@ extern int (*command_functions[]) (char**);
 extern char** mash_env_vars;
 extern char** mash_env_vals;
 
-void test_mash_env();
-void update_mash_env();
+void mash_get_env();
 
 int mash_cd(char** argv);
 int mash_pwd(char** argv);
-int mash_getenv(char** argv);
+int mash_getenv();
+int mash_refreshenv();
 int mash_setenv(char** argv);
 int mash_exit(char** argv);
 #endif

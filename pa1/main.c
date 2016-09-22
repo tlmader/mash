@@ -270,7 +270,7 @@ int loop() {
  * @return the status
  */
 int main(int argc, char** argv) {
-  test_mash_env();
-  update_mash_env();
+  // test_mash_env();
+  mash_refreshenv();
   return loop();
 }
