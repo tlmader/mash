@@ -8,12 +8,13 @@
 #ifndef COMMANDS_H_
 #define COMMANDS_H_
 
+char** vars;
+char** vals;
+
 extern char* command_labels[];
 extern int (*command_functions[]) (char**);
-extern char** mash_env_vars;
-extern char** mash_env_vals;
-
-void mash_get_env();
+extern char** mash_env_vars();
+extern char** mash_env_vals();
 
 int mash_cd(char** argv);
 int mash_pwd(char** argv);

@@ -11,8 +11,16 @@
 #include <string.h>
 #include <unistd.h>
 
-char** mash_env_vars;
-char** mash_env_vals;
+char** vars;
+char** vals;
+
+char** mash_env_vars() {
+  return vars;
+}
+
+char** mash_env_vals() {
+  return vals;
+}
 
 char* command_labels[] = {
   "cd",
@@ -55,8 +63,8 @@ int mash_pwd(char** argv) {
 }
 
 int mash_getenv() {
-  for (int j = 0; mash_env_vars[j] != NULL; j++) {
-    printf("mash_env[%i]: %s=%s", j, mash_env_vars[j], mash_env_vals[j]);
+  for (int j = 0; vars[j] != NULL; j++) {
+    printf("mash_env[%i]: %s=%s", j, vars[j], vals[j]);
   }
   return 1;
 }
@@ -73,24 +81,26 @@ int mash_refreshenv() {
     fclose(file);
     return 1;
   }
-  char** mash_env_vars = malloc(256 * sizeof(char*));
-  char** mash_env_vals = malloc(256 * sizeof(char*));
+  vars = malloc(256 * sizeof(char*));
+  vals = malloc(256 * sizeof(char*));
   char line[256];
   int i = 0;
   while (fgets(line, sizeof(line), file)) {
-    // char* var = malloc(strlen(line) + 1);
-    // strcpy(var, strtok(line, "="));
-    // char* val = malloc(strlen(line) + 1);
-    // strcpy(val, strtok(NULL, "="));
-    mash_env_vars[i] = strdup(strtok(line, "="));
-    mash_env_vals[i] = strdup(strtok(NULL, "="));
+    char* temp_var = strtok(line, "=");
+    char* temp_val = strtok(NULL, "=");
+    vars[i] = malloc(strlen(temp_var) + 1);
+    vals[i] = malloc(strlen(temp_val) + 1);
+    // strcpy(mash_env_vars[i], temp_var);
+    // strcpy(mash_env_vals[i], temp_val);
+    vars[i] = strdup(temp_var);
+    vals[i] = strdup(temp_val);
     i++;
   }
   fclose(file);
-  mash_env_vars[i] = NULL;
-  mash_env_vals[i] = NULL;
-  for (int j = 0; mash_env_vars[j] != NULL; j++) {
-    printf("mash_env[%i]: %s=%s", j, mash_env_vars[j], mash_env_vals[j]);
+  vars[i] = NULL;
+  vals[i] = NULL;
+  for (int j = 0; vars[j] != NULL; j++) {
+    printf("mash_env[%i]: %s=%s", j, vars[j], vals[j]);
   }
   return 1;
 }
